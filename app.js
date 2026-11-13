@@ -1,6 +1,6 @@
 
 const SUPABASE_URL = 'https://eadrnuxaddgdnddkyqtq.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_UoBB7odvz_YAEemAcPosng_Pdpg4QV2s';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZHJudXhhZGRnZG5kZGt5cXRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ0OTUxMDYsImV4cCI6MjExMDA3MTEwNn0.yMPmdEBAK9IKj9Sdv5pW9KQMQ6coEtvbm6Fvlnr0fU4';
 const configured = SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('PASTE_') && SUPABASE_ANON_KEY.length > 30 && !SUPABASE_ANON_KEY.includes('PASTE_');
 const db = configured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 let profile = null, account = null, activePage = 'dashboard';
