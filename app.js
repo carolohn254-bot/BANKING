@@ -15,6 +15,15 @@ $('#loginForm').addEventListener('submit',async e=>{e.preventDefault();if(!requi
 $('#registerForm').addEventListener('submit',async e=>{e.preventDefault();if(!requireConfig())return;const f=new FormData(e.currentTarget);const {data,error}=await db.auth.signUp({email:f.get('email'),password:f.get('password'),options:{data:{full_name:f.get('full_name'),phone:f.get('phone')}}});if(error)msg($('#registerMessage'),error.message,true);else msg($('#registerMessage'),data.session?'Account created. You can now sign in.':'Registration received. Check your email to confirm, then sign in.')});
 $('#logoutBtn').onclick=async()=>{await db.auth.signOut();profile=null;account=null;$('#appView').classList.add('hidden');$('#authView').classList.remove('hidden');$('#topUser').textContent=''};
 document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+$('#adminLogoutBtn').onclick = async () => {
+  await db.auth.signOut();
+  profile = null;
+  account = null;
+  $('#adminView').classList.add('hidden');
+  $('#appView').classList.add('hidden');
+  $('#authView').classList.remove('hidden');
+  $('#topUser').textContent = '';
+};
 async function loadApp() {
   if (!requireConfig()) return;
 
