@@ -15,7 +15,58 @@ $('#loginForm').addEventListener('submit',async e=>{e.preventDefault();if(!requi
 $('#registerForm').addEventListener('submit',async e=>{e.preventDefault();if(!requireConfig())return;const f=new FormData(e.currentTarget);const {data,error}=await db.auth.signUp({email:f.get('email'),password:f.get('password'),options:{data:{full_name:f.get('full_name'),phone:f.get('phone')}}});if(error)msg($('#registerMessage'),error.message,true);else msg($('#registerMessage'),data.session?'Account created. You can now sign in.':'Registration received. Check your email to confirm, then sign in.')});
 $('#logoutBtn').onclick=async()=>{await db.auth.signOut();profile=null;account=null;$('#appView').classList.add('hidden');$('#authView').classList.remove('hidden');$('#topUser').textContent=''};
 document.querySelectorAll('.navbtn').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
-async function loadApp(){if(!requireConfig())return;const {data:{user}}=await db.auth.getUser();if(!user)return;let {data:p,error}=await db.from('profiles').select('*').eq('id',user.id).single();if(error){alert('Could not load profile: '+error.message);return}profile=p;const {data:a,error:ae}=await db.from('accounts').select('*').eq('user_id',user.id).single();if(ae){alert('Account record not found. Run the Supabase SQL setup script.');return}account=a;$('#authView').classList.add('hidden');$('#appView').classList.remove('hidden');$('#welcomeName').textContent=`Hello, ${profile.full_name||user.email}`;$('#topUser').textContent=user.email;document.querySelectorAll('.admin-only').forEach(x=>x.classList.toggle('hidden',profile.role!=='admin'));await refreshNoticeCount();showPage('dashboard')}
+async function loadApp() {
+  if (!requireConfig()) return;
+
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+
+  const { data: p, error } = await db
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (error) {
+    alert('Could not load profile: ' + error.message);
+    return;
+  }
+
+  profile = p;
+  $('#authView').classList.add('hidden');
+  $('#topUser').textContent = user.email;
+
+  if (profile.role === 'admin') {
+    $('#appView').classList.add('hidden');
+    $('#adminView').classList.remove('hidden');
+    adminShowPage('overview');
+    return;
+  }
+
+  $('#adminView').classList.add('hidden');
+
+  const { data: a, error: ae } = await db
+    .from('accounts')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
+  if (ae) {
+    alert('Account record not found. Run the Supabase SQL setup script.');
+    return;
+  }
+
+  account = a;
+  $('#appView').classList.remove('hidden');
+  $('#welcomeName').textContent =
+    Hello, ${profile.full_name || user.email};
+
+  document.querySelectorAll('.admin-only')
+    .forEach(x => x.classList.add('hidden'));
+
+  await refreshNoticeCount();
+  showPage('dashboard');
+}
 async function refreshData(){const {data:a}=await db.from('accounts').select('*').eq('user_id',profile.id).single();account=a;await refreshNoticeCount()}
 async function refreshNoticeCount(){const {count}=await db.from('notifications').select('*',{count:'exact',head:true}).eq('user_id',profile.id).eq('is_read',false);$('#noticeCount').textContent=count||0}
 function showPage(page){activePage=page;document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='dashboard')dashboard();if(page==='transactions')transactions();if(page==='notifications')notifications();if(page==='complaints')complaints();if(page==='profile')profilePage();if(page==='admin'&&profile.role==='admin')adminPage()}
