@@ -11,3 +11,24 @@
 <nav class="nav" id="nav"><button class="navbtn active" data-page="dashboard">Dashboard</button><button class="navbtn" data-page="transactions">Transactions</button><button class="navbtn" data-page="notifications">Notifications <span id="noticeCount" class="count">0</span></button><button class="navbtn" data-page="complaints">Complaints</button><button class="navbtn" data-page="profile">My profile</button><button class="navbtn admin-only hidden" data-page="admin">Administration</button></nav>
 <div id="pageContent"></div></section>
 </main><footer>Real-Time Mobile Banking • Student project demonstration</footer><script src="app.js"></script></body></html>
+<section id="adminView" class="hidden">
+  <header class="admin-header">
+    <div>
+      <h1>RB Administration</h1>
+      <p>Administrator Control Centre</p>
+    </div>
+    <button id="adminLogoutBtn" class="outline">
+      Sign out
+    </button>
+  </header>
+
+  <nav class="admin-nav">
+    <button onclick="adminShowPage('overview')">Overview</button>
+    <button onclick="adminShowPage('users')">Customers</button>
+    <button onclick="adminShowPage('transactions')">Transactions</button>
+    <button onclick="adminShowPage('complaints')">Complaints</button>
+    <button onclick="adminShowPage('reports')">Reports</button>
+  </nav>
+
+  <div id="adminContent"></div>
+</section>
