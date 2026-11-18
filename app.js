@@ -59,7 +59,7 @@ async function loadApp() {
   account = a;
   $('#appView').classList.remove('hidden');
   $('#welcomeName').textContent =
-    Hello, ${profile.full_name || user.email};
+    Hello, ${profile.full_name || user.email}
 
   document.querySelectorAll('.admin-only')
     .forEach(x => x.classList.add('hidden'));
@@ -79,3 +79,96 @@ async function complaints(){const {data}=await db.from('complaints').select('*')
 function profilePage(){$('#pageContent').innerHTML=`<div class="panel"><h2>My profile</h2><p><b>Full name:</b> ${esc(profile.full_name)}</p><p><b>Email:</b> ${esc(profile.email)}</p><p><b>Phone:</b> ${esc(profile.phone||'Not provided')}</p><p><b>Role:</b> ${esc(profile.role)}</p><p><b>Account number:</b> ${esc(account.account_number)}</p><p class="muted">For account security, update your password through the authentication provider's password reset process.</p></div>`}
 async function adminPage(){const {data:users}=await db.from('profiles').select('id,full_name,email,role,created_at').order('created_at',{ascending:false});const {data:allTx}=await db.from('transactions').select('*').order('created_at',{ascending:false}).limit(50);$('#pageContent').innerHTML=`<div class="panel"><h2>Administrator dashboard</h2><p class="muted">Manage demonstration users. Never use this system for real banking.</p><h3>Registered users</h3><div class="tablewrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Action</th></tr></thead><tbody>${(users||[]).map(u=>`<tr><td>${esc(u.full_name)}</td><td>${esc(u.email)}</td><td>${esc(u.role)}</td><td>${u.role==='customer'?`<button class="outline" data-promote="${u.id}">Make admin</button>`:'Administrator'}</td></tr>`).join('')}</tbody></table></div></div><div class="panel"><h2>Latest system transactions</h2>${tableTx(allTx||[])}</div>`;document.querySelectorAll('[data-promote]').forEach(b=>b.onclick=async()=>{if(!confirm('Promote this user to administrator?'))return;const {error}=await db.from('profiles').update({role:'admin'}).eq('id',b.dataset.promote);if(error)alert(error.message);else adminPage()})}
 if(configured){db.auth.getSession().then(({data})=>{if(data.session)loadApp()});db.auth.onAuthStateChange((_event,session)=>{if(!session){$('#appView').classList.add('hidden');$('#authView').classList.remove('hidden')}})}else{$('#authMessage').textContent='Setup required: connect your Supabase project using SETUP_GUIDE.md.'}
+function adminShowPage(page) {
+  const content = $('#adminContent');
+
+  if (page === 'overview') {
+    content.innerHTML = `
+      <div class="panel">
+        <h2>Admin Overview</h2>
+        <p>Welcome to the RB Administration Control Centre.</p>
+        <p>Manage customers, monitor transactions and review complaints.</p>
+      </div>`;
+  }
+
+  if (page === 'users') {
+    content.innerHTML = '<div class="panel"><h2>Customers</h2><p>Loading customers...</p></div>';
+
+    db.from('profiles')
+      .select('full_name,email,role,created_at')
+      .eq('role', 'customer')
+      .then(({ data, error }) => {
+        if (error) {
+          content.innerHTML = <div class="panel">Error: ${esc(error.message)}</div>;
+          return;
+        }
+
+        content.innerHTML = `
+          <div class="panel">
+            <h2>Registered Customers</h2>
+            <div class="tablewrap">
+              <table>
+                <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
+                <tbody>
+                  ${(data || []).map(u => `
+                    <tr>
+                      <td>${esc(u.full_name)}</td>
+                      <td>${esc(u.email)}</td>
+                      <td>${esc(u.role)}</td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+      });
+  }
+
+  if (page === 'transactions') {
+    content.innerHTML = '<div class="panel"><h2>Transactions</h2><p>Loading...</p></div>';
+
+    db.from('transactions')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50)
+      .then(({ data, error }) => {
+        if (error) {
+          content.innerHTML = <div class="panel">Error: ${esc(error.message)}</div>;
+          return;
+        }
+
+        content.innerHTML = `
+          <div class="panel">
+            <h2>Recent Transactions</h2>
+            ${tableTx(data || [])}
+          </div>`;
+      });
+  }
+
+  if (page === 'complaints') {
+    content.innerHTML = '<div class="panel"><h2>Complaints</h2><p>Loading...</p></div>';
+
+    db.from('complaints')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) {
+          content.innerHTML = <div class="panel">Error: ${esc(error.message)}</div>;
+          return;
+        }
+
+        content.innerHTML = `
+          <div class="panel">
+            <h2>Customer Complaints</h2>
+            <pre>${esc(JSON.stringify(data || [], null, 2))}</pre>
+          </div>`;
+      });
+  }
+
+  if (page === 'reports') {
+    content.innerHTML = `
+      <div class="panel">
+        <h2>Reports</h2>
+        <p>System reports will be displayed here.</p>
+      </div>`;
+  }
+}
