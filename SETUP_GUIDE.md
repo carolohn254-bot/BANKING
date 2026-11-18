@@ -1,57 +1,76 @@
-# Step-by-step setup and GitHub Pages deployment
+# Setup and GitHub Pages deployment
 
-## Part 1 — Create the online database
-1. Open https://supabase.com and create an account or sign in.
-2. Select **New project**. Name it `real-time-mobile-banking`; choose a strong database password and save it privately. Select a region near you if available.
-3. Wait until the project is ready.
-4. Open **SQL Editor** → **New query**.
-5. Open the file `supabase-schema.sql` from this project, copy all its contents, paste into the SQL Editor, then click **Run**. The script creates the tables and access policies.
-6. Go to **Project Settings** → **API** (or **API Keys**). Copy the Project URL and the `anon` / `publishable` public key. Never copy a `service_role` or secret key.
+This version contains **no PHP**. The customer and administrator interface uses HTML, CSS and JavaScript. Supabase provides authentication, PostgreSQL storage, row-level security and transaction functions. GitHub Pages hosts the static website.
 
-## Part 2 — Connect the website to Supabase
-1. Open this folder in Visual Studio Code.
-2. Open `app.js`.
-3. At the top, replace `PASTE_YOUR_SUPABASE_PROJECT_URL_HERE` with your Project URL, keeping the quotation marks.
-4. Replace `PASTE_YOUR_SUPABASE_ANON_PUBLIC_KEY_HERE` with your anon/public key, keeping the quotation marks.
-5. Save the file. Do not publish the file until both values have been entered.
+## 1. Configure Supabase
 
-## Part 3 — Configure authentication
-1. In Supabase, open **Authentication** → **Providers** and ensure Email is enabled.
-2. Open **Authentication** → **URL Configuration**.
-3. After GitHub Pages gives you the website URL, set **Site URL** to that URL and add it to **Redirect URLs** too.
-4. For testing, you may disable email confirmation under Authentication settings; otherwise, users must open the confirmation email before signing in. Re-enable confirmation for a more realistic demonstration.
+The project credentials supplied earlier are prefilled in `config.js`:
+- Project URL: `https://eadrnuxaddgdnddkyqtq.supabase.co`
+- Publishable key: the `sb_publishable_...` value supplied for this project.
 
-## Part 4 — Publish on GitHub Pages
-1. Sign in at https://github.com.
-2. Create a new repository, for example `real-time-mobile-banking`.
-3. In the repository, select **Add file** → **Upload files**.
-4. Upload `index.html`, `style.css`, `app.js`, and the README. You may also upload the SQL and guide files, but do not upload passwords or secret keys.
-5. Commit the files to the `main` branch.
-6. Open repository **Settings** → **Pages**.
-7. Under Build and deployment, select **Deploy from a branch**; choose branch `main` and folder `/ (root)`; click **Save**.
-8. Wait a few minutes and refresh the Pages screen. GitHub will show your published website URL, normally `https://YOUR-USERNAME.github.io/real-time-mobile-banking/`.
-9. Return to Supabase URL Configuration and add that exact URL to Site URL and Redirect URLs.
-10. Open the GitHub Pages URL in Chrome and test the system.
+If Supabase shows a different Project URL or key in your dashboard, replace the values in `config.js` with the exact values from **Supabase Dashboard → Project Settings → API**. Use only the publishable/anon key in the browser. Never paste a `service_role` or secret key into `config.js`, GitHub, or a public repository.
 
-## Part 5 — Test the system
-1. Create a customer account from the Register tab.
-2. Confirm the email if confirmation is enabled, then sign in.
-3. Confirm the account number and starting simulated balance appear.
-4. Test a small simulated deposit and a withdrawal below the available balance. Register a second demo account and test a transfer using its account number.
-5. Check Transactions and Notifications; test Complaints; test Sign out.
-6. To make your own account an administrator, run this SQL in Supabase SQL Editor after replacing the email:
+1. Open the Supabase project `real-time-mobile-banking`.
+2. Open **SQL Editor → New query**.
+3. Open `supabase-schema.sql`, copy the complete contents, paste into SQL Editor and click **Run**.
+4. Confirm the query completes without errors. This script creates the `mb_` tables, access policies, signup trigger and secure transaction function. It uses `mb_` table names so it can coexist with earlier tables from the PHP version.
+5. In **Authentication → Providers → Email**, enable Email provider. For a classroom demonstration you may turn off email confirmation; for real users leave confirmation enabled.
+6. In **Authentication → URL Configuration**, add your future GitHub Pages URL to Site URL and Redirect URLs after publishing (for example `https://YOUR-GITHUB-NAME.github.io/YOUR-REPOSITORY/`).
+
+## 2. Create the administrator safely
+
+Do not allow users to choose the administrator role on the public registration form.
+
+1. In Supabase, open **Authentication → Users → Add user**.
+2. Create the administrator with an email address you control and a strong password. Confirm the user if the dashboard offers that option.
+3. Open **SQL Editor** and run the following statement, replacing the email with the exact admin email:
 
 ```sql
-update public.profiles set role='admin' where email='YOUR_REGISTERED_EMAIL';
+update public.mb_profiles
+set role = 'admin'
+where email = 'your-admin-email@example.com';
 ```
 
-Sign out and sign in again to see Administration.
+4. Confirm one row was updated. The administrator now signs in on the same login page as customers. The application checks the database role and opens the administrator dashboard.
+
+Customer accounts are created from **Create account** on the website. The signup trigger automatically creates a customer profile and a zero-balance simulated account.
+
+## 3. Test the system
+
+1. Sign in as the administrator. The dashboard displays registered customers, total balances, transaction count, complaints, notifications, customer list, transactions and audit events.
+2. Log out and create a customer account using a different email.
+3. Sign in as that customer. The customer can view their own balance/history, submit a simulated deposit or withdrawal, transfer to another customer's account number, and submit a complaint.
+4. Sign back in as administrator and refresh the dashboard to see the updated records.
+
+**Important:** deposits and transfers are academic simulations. They do not connect to banks or move real money. Newly registered customers start with KSh 0.00. Use the customer deposit function to add simulated test funds.
+
+## 4. Publish using GitHub Pages
+
+1. Sign in to GitHub and create a new **Public** repository, for example `real-time-mobile-banking`.
+2. Extract this ZIP on your computer.
+3. Upload the files and folders in the extracted project root (`index.html`, `style.css`, `app.js`, `config.js`, `supabase-schema.sql`, this guide and README). Do not upload a PHP project or database passwords.
+4. In the repository, open **Settings → Pages**.
+5. Under **Build and deployment**, choose **Deploy from a branch**.
+6. Select branch `main`, folder `/ (root)`, then click **Save**.
+7. Wait for GitHub Pages to finish. Your site address will look like `https://YOUR-GITHUB-NAME.github.io/real-time-mobile-banking/`.
+8. Copy that URL into Supabase **Authentication → URL Configuration** as the Site URL and add it to Redirect URLs.
+9. Open the published URL on a phone and computer and test both roles.
+
+GitHub Pages only hosts the static frontend. Supabase remains the backend and database. Do not expect PHP or MySQL files to run on GitHub Pages.
+
+## 5. Security notes
+
+- The Supabase publishable key is intended for browser use; database safety comes from Row Level Security and restricted SQL functions.
+- Never publish a Supabase `service_role` key or database password.
+- The administrator role must only be assigned in the trusted Supabase dashboard/SQL Editor.
+- Review RLS policies before using real personal or financial information. This is a student demonstration, not a production banking platform.
+- Use strong passwords and remove public demo accounts before sharing the site broadly.
 
 ## Troubleshooting
-- “Connect Supabase first”: the Project URL and anon/public key are still placeholders or were pasted incorrectly in `app.js`.
-- Registration succeeds but sign-in fails: confirm the email if email confirmation is enabled.
-- “Account record not found”: make sure the SQL script ran successfully before registering the account. If you registered before running the script, run the SQL first, then register a fresh test account.
-- Website shows 404: verify `index.html` is in the repository root and GitHub Pages is set to `main` / root.
-- Changes are not visible: wait a few minutes, refresh with Ctrl+F5, and confirm the latest files were committed.
 
-**Security reminder:** This is a simulated student project. Do not use actual bank account details, real customer information, or real money. Never publish a Supabase service-role key or database password.
+- **Invalid API key / failed connection:** verify that `config.js` contains the exact Project URL and matching publishable key from the same Supabase project. The URL must be the base URL only, without `/rest/v1/`.
+- **Could not find table / relation missing:** run all of `supabase-schema.sql` in the intended Supabase project.
+- **Account created but not signed in:** email confirmation may be enabled. Confirm the email, or turn confirmation off for a controlled classroom demo.
+- **Profile missing after signup:** check Supabase SQL Editor logs and confirm the `mb_auth_user_created` trigger exists.
+- **Customer sees no starting funds:** new accounts start at zero; sign in as the customer and use a simulated deposit.
+- **Admin dashboard access denied:** verify that the admin user exists in Authentication → Users and that the matching `mb_profiles.email` row has role `admin` and status `active`.
